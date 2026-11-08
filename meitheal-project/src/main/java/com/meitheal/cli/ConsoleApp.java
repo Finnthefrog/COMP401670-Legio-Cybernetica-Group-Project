@@ -7,17 +7,31 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ConsoleApp {
     private final TimeBankService service;
     private final Scanner scanner;
+    private final Map<String, Runnable> commands;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public ConsoleApp(TimeBankService service) {
         this.service = service;
         this.scanner = new Scanner(System.in);
+        this.commands = new HashMap<>();
+        commands.put("1", this::registerMember);
+        commands.put("2", this::suspendOrReinstateMember);
+        commands.put("3", this::publishOffer);
+        commands.put("4", this::raiseRequest);
+        commands.put("5", this::proposeEngagement);
+        commands.put("6", this::confirmSession);
+        commands.put("7", this::cancelEngagement);
+        commands.put("8", this::applyForGrant);
+        commands.put("9", this::queryBalancesAndHistory);
+        commands.put("10", this::printSystemReport);
     }
 
     public void start() {
@@ -37,23 +51,18 @@ public class ConsoleApp {
     }
 
     private boolean handleChoice(String choice) {
-        switch (choice) {
-            case "1" -> registerMember();
-            case "2" -> suspendOrReinstateMember();
-            case "3" -> publishOffer();
-            case "4" -> raiseRequest();
-            case "5" -> proposeEngagement();
-            case "6" -> confirmSession();
-            case "7" -> cancelEngagement();
-            case "8" -> applyForGrant();
-            case "9" -> queryBalancesAndHistory();
-            case "10" -> printSystemReport();
-            case "0" -> {
-                System.out.println("Exiting Meitheal Time-Bank. Goodbye!");
-                return false;
-            }
-            default -> System.out.println("Invalid option. Please choose between 0 and 10.");
+        if ("0".equals(choice)) {
+            System.out.println("Exiting Meitheal Time-Bank. Goodbye!");
+            return false;
         }
+
+        Runnable command = commands.get(choice);
+        if (command == null) {
+            System.out.println("Invalid option. Please choose between 0 and 10.");
+            return true;
+        }
+
+        command.run();
         return true;
     }
 
