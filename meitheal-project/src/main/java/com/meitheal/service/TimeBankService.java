@@ -157,8 +157,7 @@ public class TimeBankService {
         // E.g. 60 min = 60 credits. durationMinutes credits.
         int sessionCost = engagement.getDurationMinutes();
 
-        // R10: 5% community levy taken from transfer, rounded down to whole credits, paid by requester on top
-        int levy = (int) Math.floor(sessionCost * LEVY_RATE);
+        int levy = calculateLevy(sessionCost);
         int totalRequesterDeduction = sessionCost + levy;
 
         // Check R2 & R10: Requester balance cannot drop below -180 floor
@@ -182,6 +181,11 @@ public class TimeBankService {
                 levy
         );
         ledger.addEntry(entry);
+    }
+
+    // R10: 5% community levy taken from transfer, rounded down to whole credits, paid by requester on top
+    private int calculateLevy(int sessionCost) {
+        return (int) Math.floor(sessionCost * LEVY_RATE);
     }
 
     public void cancelEngagement(String engagementId, String cancellingMemberId) {
