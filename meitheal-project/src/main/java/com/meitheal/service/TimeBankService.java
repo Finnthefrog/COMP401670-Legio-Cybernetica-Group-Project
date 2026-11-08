@@ -9,6 +9,13 @@ import java.time.YearMonth;
 import java.util.*;
 
 public class TimeBankService {
+    // R3: one-off welcome grant given to every new member
+    private static final int WELCOME_GRANT = 120;
+    // R2: lowest balance a requester may reach
+    private static final int OVERDRAFT_FLOOR = -180;
+    // R10: community levy rate, paid by the requester on top of the session cost
+    private static final double LEVY_RATE = 0.05;
+
     private final Map<String, Member> members = new LinkedHashMap<>();
     private final Map<String, Offering> offerings = new LinkedHashMap<>();
     private final Map<String, Request> requests = new LinkedHashMap<>();
@@ -47,7 +54,7 @@ public class TimeBankService {
     public Member registerMember(String name, String email) {
         String memberId = "M" + (idCounter++);
         // R3: One-off welcome grant of 120 credits when member joins
-        Member member = new Member(memberId, name, email, 120);
+        Member member = new Member(memberId, name, email, WELCOME_GRANT);
         members.put(memberId, member);
 
         LedgerEntry entry = new LedgerEntry(
@@ -56,7 +63,7 @@ public class TimeBankService {
                 "Welcome Grant for " + name,
                 null,
                 memberId,
-                120,
+                WELCOME_GRANT,
                 0
         );
         ledger.addEntry(entry);
@@ -154,11 +161,11 @@ public class TimeBankService {
         int sessionCost = engagement.getDurationMinutes();
 
         // R10: 5% community levy taken from transfer, rounded down to whole credits, paid by requester on top
-        int levy = (int) Math.floor(sessionCost * 0.05);
+        int levy = (int) Math.floor(sessionCost * LEVY_RATE);
         int totalRequesterDeduction = sessionCost + levy;
 
         // Check R2 & R10: Requester balance cannot drop below -180 floor
-        if (requester.getBalance() - totalRequesterDeduction < -180) {
+        if (requester.getBalance() - totalRequesterDeduction < OVERDRAFT_FLOOR) {
             throw new IllegalStateException("Transfer rejected: Requester would breach the overdraft floor of -180 credits (R2, R10).");
         }
 
