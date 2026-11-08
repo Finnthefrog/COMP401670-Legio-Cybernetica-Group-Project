@@ -1,4 +1,4 @@
-package com.meitheal.Main;
+package com.meitheal;
 
 import com.meitheal.cli.ConsoleApp;
 import com.meitheal.service.TimeBankService;
