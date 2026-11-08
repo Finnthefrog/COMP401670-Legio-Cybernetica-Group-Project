@@ -21,37 +21,46 @@ public class ConsoleApp {
     }
 
     public void start() {
-        System.out.println("==================================================");
-        System.out.println("   Welcome to Meitheal Community Time-Bank CLI    ");
-        System.out.println("==================================================");
+        printBanner();
 
         boolean running = true;
         while (running) {
             printMenu();
             String choice = scanner.nextLine().trim();
             try {
-                switch (choice) {
-                    case "1" -> registerMember();
-                    case "2" -> suspendOrReinstateMember();
-                    case "3" -> publishOffer();
-                    case "4" -> raiseRequest();
-                    case "5" -> proposeEngagement();
-                    case "6" -> confirmSession();
-                    case "7" -> cancelEngagement();
-                    case "8" -> applyForGrant();
-                    case "9" -> queryBalancesAndHistory();
-                    case "10" -> printSystemReport();
-                    case "0" -> {
-                        running = false;
-                        System.out.println("Exiting Meitheal Time-Bank. Goodbye!");
-                    }
-                    default -> System.out.println("Invalid option. Please choose between 0 and 10.");
-                }
+                running = handleChoice(choice);
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }
             System.out.println();
         }
+    }
+
+    private boolean handleChoice(String choice) {
+        switch (choice) {
+            case "1" -> registerMember();
+            case "2" -> suspendOrReinstateMember();
+            case "3" -> publishOffer();
+            case "4" -> raiseRequest();
+            case "5" -> proposeEngagement();
+            case "6" -> confirmSession();
+            case "7" -> cancelEngagement();
+            case "8" -> applyForGrant();
+            case "9" -> queryBalancesAndHistory();
+            case "10" -> printSystemReport();
+            case "0" -> {
+                System.out.println("Exiting Meitheal Time-Bank. Goodbye!");
+                return false;
+            }
+            default -> System.out.println("Invalid option. Please choose between 0 and 10.");
+        }
+        return true;
+    }
+
+    private void printBanner() {
+        System.out.println("==================================================");
+        System.out.println("   Welcome to Meitheal Community Time-Bank CLI    ");
+        System.out.println("==================================================");
     }
 
     private void printMenu() {
