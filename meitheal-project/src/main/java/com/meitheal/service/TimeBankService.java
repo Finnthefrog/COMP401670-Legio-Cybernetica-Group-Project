@@ -123,10 +123,7 @@ public class TimeBankService {
     }
 
     public void confirmEngagementSession(String engagementId, String memberId, boolean isProvider) {
-        Engagement engagement = engagements.get(engagementId);
-        if (engagement == null || engagement.getStatus() == EngagementStatus.CANCELLED) {
-            throw new IllegalArgumentException("Engagement not found or already cancelled.");
-        }
+        Engagement engagement = requireOpenEngagement(engagementId);
 
         Member member = members.get(memberId);
         if (member == null) {
@@ -188,10 +185,7 @@ public class TimeBankService {
     }
 
     public void cancelEngagement(String engagementId, String cancellingMemberId) {
-        Engagement engagement = engagements.get(engagementId);
-        if (engagement == null || engagement.getStatus() == EngagementStatus.CANCELLED) {
-            throw new IllegalArgumentException("Engagement not found or already cancelled.");
-        }
+        Engagement engagement = requireOpenEngagement(engagementId);
         Member member = members.get(cancellingMemberId);
         if (member == null) {
             throw new IllegalArgumentException("Member not found.");
@@ -244,6 +238,14 @@ public class TimeBankService {
                 0
         );
         ledger.addEntry(entry);
+    }
+
+    private Engagement requireOpenEngagement(String engagementId) {
+        Engagement engagement = engagements.get(engagementId);
+        if (engagement == null || engagement.getStatus() == EngagementStatus.CANCELLED) {
+            throw new IllegalArgumentException("Engagement not found or already cancelled.");
+        }
+        return engagement;
     }
 
     private Member getActiveMember(String memberId) {
