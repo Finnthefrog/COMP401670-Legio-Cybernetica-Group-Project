@@ -192,7 +192,7 @@ public class TimeBankService {
         if (engagement == null || engagement.getStatus() == EngagementStatus.CANCELLED) {
             throw new IllegalArgumentException("Engagement not found or already cancelled.");
         }
-        Member member = members.get(memberId(cancellingMemberId));
+        Member member = members.get(cancellingMemberId);
         if (member == null) {
             throw new IllegalArgumentException("Member not found.");
         }
@@ -255,10 +255,6 @@ public class TimeBankService {
             throw new IllegalStateException("Member is suspended and cannot perform this operation (R6).");
         }
         return member;
-    }
-
-    private String memberId(String id) {
-        return id;
     }
 
     // R12: Read-only accessors
