@@ -161,7 +161,7 @@ public class TimeBankService {
         int totalRequesterDeduction = sessionCost + levy;
 
         // Check R2 & R10: Requester balance cannot drop below -180 floor
-        if (requester.getBalance() - totalRequesterDeduction < OVERDRAFT_FLOOR) {
+        if (wouldBreachOverdraftFloor(requester.getBalance(), totalRequesterDeduction)) {
             throw new IllegalStateException("Transfer rejected: Requester would breach the overdraft floor of -180 credits (R2, R10).");
         }
 
@@ -181,6 +181,10 @@ public class TimeBankService {
                 levy
         );
         ledger.addEntry(entry);
+    }
+
+    private boolean wouldBreachOverdraftFloor(int balance, int deduction) {
+        return balance - deduction < OVERDRAFT_FLOOR;
     }
 
     // R10: 5% community levy taken from transfer, rounded down to whole credits, paid by requester on top
