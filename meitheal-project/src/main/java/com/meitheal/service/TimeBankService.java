@@ -71,6 +71,19 @@ public class TimeBankService {
         member.setStatus(suspend ? MemberStatus.SUSPENDED : MemberStatus.ACTIVE);
     }
 
+    /**
+     * Suspends or reinstates a member only if the acting login is allowed to do so.
+     * The unchecked overload above remains for existing callers and is a known gap
+     * to be removed separately.
+     */
+    public void suspendMember(User actingUser, String memberId, boolean suspend) {
+        Objects.requireNonNull(actingUser, "Acting user is required");
+        if (!actingUser.canSuspendMembers()) {
+            throw new SecurityException("Only a System Admin can suspend or reinstate members.");
+        }
+        suspendMember(memberId, suspend);
+    }
+
     public Offering publishOffer(String memberId, String skillCategory) {
         Member member = getActiveMember(memberId);
         if (!validSkillCategories.contains(skillCategory)) {
