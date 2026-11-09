@@ -7,11 +7,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleApp {
     private final TimeBankService service;
     private final Scanner scanner;
+    private User actingUser;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -24,6 +27,9 @@ public class ConsoleApp {
         System.out.println("==================================================");
         System.out.println("   Welcome to Meitheal Community Time-Bank CLI    ");
         System.out.println("==================================================");
+
+        actingUser = selectIdentity();
+        System.out.println("Acting as: " + actingUser.getDisplayName() + " (" + actingUser.getLoginId() + ")");
 
         boolean running = true;
         while (running) {
@@ -70,6 +76,36 @@ public class ConsoleApp {
         System.out.print("Enter choice: ");
     }
 
+    private User selectIdentity() {
+        List<Member> members = new ArrayList<>(service.getMembers().values());
+        System.out.println("\n--- SELECT YOUR IDENTITY ---");
+        for (int i = 0; i < members.size(); i++) {
+            Member m = members.get(i);
+            System.out.println((i + 1) + ". Member: " + m.getName() + " (" + m.getId() + ")");
+        }
+        int adminChoice = members.size() + 1;
+        System.out.println(adminChoice + ". Administrator");
+        while (true) {
+            System.out.print("Enter choice: ");
+            String input = scanner.nextLine().trim();
+            int choice;
+            try {
+                choice = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a number.");
+                continue;
+            }
+            if (choice >= 1 && choice <= members.size()) {
+                Member m = members.get(choice - 1);
+                return new User(m.getId(), m.getName(), m);
+            }
+            if (choice == adminChoice) {
+                return new AdminUser("ADMIN", "System Administrator");
+            }
+            System.out.println("Invalid choice. Please choose between 1 and " + adminChoice + ".");
+        }
+    }
+
     private void registerMember() {
         System.out.print("Enter name: ");
         String name = scanner.nextLine();
@@ -80,11 +116,15 @@ public class ConsoleApp {
     }
 
     private void suspendOrReinstateMember() {
+        if (!actingUser.canSuspendMembers()) {
+            System.out.println("Refused: only a System Admin can suspend or reinstate members.");
+            return;
+        }
         System.out.print("Enter Member ID: ");
         String id = scanner.nextLine();
         System.out.print("Suspend (true/false): ");
         boolean suspend = Boolean.parseBoolean(scanner.nextLine());
-        service.suspendMember(id, suspend);
+        service.suspendMember(actingUser, id, suspend);
         System.out.println("Member " + id + " suspension status updated to: " + suspend);
     }
 
@@ -158,12 +198,23 @@ public class ConsoleApp {
     private void queryBalancesAndHistory() {
         System.out.println("\n--- MEMBERS & BALANCES ---");
         for (Member m : service.getMembers().values()) {
-            System.out.println(m);
+            if (actingUser.canInspect(m)) {
+                System.out.println(m);
+            }
         }
         System.out.println("\n--- LEDGER ENTRIES ---");
         for (LedgerEntry entry : service.getLedger().getEntries()) {
-            System.out.println(entry);
+            if (canInspectLedgerEntry(entry)) {
+                System.out.println(entry);
+            }
         }
+    }
+
+    private boolean canInspectLedgerEntry(LedgerEntry entry) {
+        Member sender = entry.getSenderId() == null ? null : service.getMembers().get(entry.getSenderId());
+        Member recipient = entry.getRecipientId() == null ? null : service.getMembers().get(entry.getRecipientId());
+        return (sender == null || actingUser.canInspect(sender))
+                && (recipient == null || actingUser.canInspect(recipient));
     }
 
     private void printSystemReport() {
