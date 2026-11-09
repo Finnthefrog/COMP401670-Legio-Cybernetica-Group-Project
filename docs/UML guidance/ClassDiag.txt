@@ -1,0 +1,89 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+skinparam shadowing false
+skinparam class {
+    BackgroundColor White
+    ArrowColor Black
+    BorderColor Black
+}
+
+class SystemState {
+}
+
+class Ledger {
+}
+
+class Bank {
+}
+
+class User {
+}
+
+class AdminUser {
+    + issueCommunityGrant(fund: CommunityFund, recipient: Member, amount: Real)
+}
+
+class CommunityMemberAccount {
+}
+
+class Member {
+    + createOffering(skill: Skill): Offering
+    + createRequest(skill: Skill): Request
+}
+
+class CommunityFund {
+    + disburseGrant(recipient: Member, amount: Real)
+}
+
+abstract class Session {
+    - earliestFulfilmentDate: Date
+    - latestFulfilmentDate: Date
+}
+
+class Offering {
+    + accept(acceptor: Member): Engagement
+}
+
+class Request {
+    + accept(acceptor: Member): Engagement
+}
+
+class Skill {
+}
+
+class Engagement {
+    - isCancelled: Boolean
+}
+
+' Inheritance & Realization
+User <|-- AdminUser
+User <|-- CommunityMemberAccount
+Session <|-- Offering
+Session <|-- Request
+
+' System / State Interfaces
+User "1" -- "1" SystemState : interfaces with >
+SystemState "1" *-- "1" Ledger
+
+' Domain Associations & Skills
+Member "*" -- "*" Skill : possesses >
+Session "*" -- "1" Skill : targets >
+
+' Creation Flows
+Member "1" -- "*" Offering : creates >
+Member "1" -- "*" Request : creates >
+
+' Engagement Lifecycle
+Offering "1" ..> Engagement : creates on acceptance >
+Request "1" ..> Engagement : creates on acceptance >
+Member "1" -- "*" Engagement : participates in >
+Ledger "1" o-- "*" Engagement : contains >
+
+' Financial & Governance Entities
+Bank "1" -- "*" CommunityMemberAccount : manages >
+AdminUser "1" ..> CommunityFund : takes grant from >
+AdminUser "1" ..> Member : awards grant to >
+CommunityFund "1" ..> Member : disburses grant to >
+
+@enduml
