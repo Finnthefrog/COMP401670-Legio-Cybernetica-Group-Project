@@ -106,6 +106,30 @@ public class ConsoleApp {
         }
     }
 
+    private Member requireActingMember() {
+        if (!actingUser.canActAsMember()) {
+            System.out.println("Refused: this identity has no time-bank account and cannot perform member actions.");
+            return null;
+        }
+        return actingUser.linkedMember().orElseThrow();
+    }
+
+    /**
+     * INV-6 (R6): surface a suspension early for member actions that create new
+     * work. TimeBankService remains the single source of truth for enforcement.
+     */
+    private Member requireActiveActingMember() {
+        Member member = requireActingMember();
+        if (member == null) {
+            return null;
+        }
+        if (member.getStatus() == MemberStatus.SUSPENDED) {
+            System.out.println("Refused: suspended members cannot offer skills, raise requests, propose engagements or apply for grants (R6).");
+            return null;
+        }
+        return member;
+    }
+
     private void registerMember() {
         System.out.print("Enter name: ");
         String name = scanner.nextLine();
@@ -129,18 +153,22 @@ public class ConsoleApp {
     }
 
     private void publishOffer() {
-        System.out.print("Enter Member ID: ");
-        String memberId = scanner.nextLine();
+        Member member = requireActiveActingMember();
+        if (member == null) {
+            return;
+        }
         System.out.println("Valid Categories: " + service.getValidSkillCategories());
         System.out.print("Enter skill category: ");
         String category = scanner.nextLine();
-        Offering off = service.publishOffer(memberId, category);
+        Offering off = service.publishOffer(member.getId(), category);
         System.out.println("Offer published successfully! ID: " + off.getId());
     }
 
     private void raiseRequest() {
-        System.out.print("Enter Member ID: ");
-        String memberId = scanner.nextLine();
+        Member member = requireActiveActingMember();
+        if (member == null) {
+            return;
+        }
         System.out.println("Valid Categories: " + service.getValidSkillCategories());
         System.out.print("Enter skill category: ");
         String category = scanner.nextLine();
@@ -148,11 +176,14 @@ public class ConsoleApp {
         LocalDate earliest = LocalDate.parse(scanner.nextLine(), dateFormatter);
         System.out.print("Enter latest date (yyyy-MM-dd): ");
         LocalDate latest = LocalDate.parse(scanner.nextLine(), dateFormatter);
-        Request req = service.raiseRequest(memberId, category, earliest, latest);
+        Request req = service.raiseRequest(member.getId(), category, earliest, latest);
         System.out.println("Request raised successfully! ID: " + req.getId());
     }
 
     private void proposeEngagement() {
+        if (requireActiveActingMember() == null) {
+            return;
+        }
         System.out.print("Enter Offering ID: ");
         String offId = scanner.nextLine();
         System.out.print("Enter Request ID: ");
@@ -166,32 +197,49 @@ public class ConsoleApp {
     }
 
     private void confirmSession() {
+        Member member = requireActingMember();
+        if (member == null) {
+            return;
+        }
         System.out.print("Enter Engagement ID: ");
         String engId = scanner.nextLine();
-        System.out.print("Enter Member ID confirming: ");
-        String memberId = scanner.nextLine();
-        System.out.print("Is this member the provider? (true/false): ");
-        boolean isProvider = Boolean.parseBoolean(scanner.nextLine());
-        service.confirmEngagementSession(engId, memberId, isProvider);
+        Engagement engagement = service.getEngagements().get(engId);
+        if (engagement == null) {
+            System.out.println("Engagement not found: " + engId);
+            return;
+        }
+        Member provider = engagement.getOffering().getProvider();
+        Member requester = engagement.getRequest().getRequester();
+        // R4: derive the role from the engagement; the operator never self-declares it.
+        boolean isProvider = provider.equals(member);
+        if (!isProvider && !requester.equals(member)) {
+            System.out.println("Refused: you are not a party to engagement " + engId + ".");
+            return;
+        }
+        service.confirmEngagementSession(engId, member.getId(), isProvider);
         System.out.println("Confirmation recorded successfully.");
     }
 
     private void cancelEngagement() {
+        Member member = requireActingMember();
+        if (member == null) {
+            return;
+        }
         System.out.print("Enter Engagement ID: ");
         String engId = scanner.nextLine();
-        System.out.print("Enter Cancelling Member ID: ");
-        String memberId = scanner.nextLine();
-        service.cancelEngagement(engId, memberId);
+        service.cancelEngagement(engId, member.getId());
         System.out.println("Engagement cancelled.");
     }
 
     private void applyForGrant() {
-        System.out.print("Enter Member ID: ");
-        String memberId = scanner.nextLine();
+        Member member = requireActiveActingMember();
+        if (member == null) {
+            return;
+        }
         System.out.print("Enter grant amount: ");
         int amount = Integer.parseInt(scanner.nextLine());
         YearMonth currentMonth = YearMonth.now();
-        service.applyCommunityFundGrant(memberId, amount, currentMonth);
+        service.applyCommunityFundGrant(member.getId(), amount, currentMonth);
         System.out.println("Community fund grant applied successfully!");
     }
 
