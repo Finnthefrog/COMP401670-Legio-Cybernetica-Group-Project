@@ -1,6 +1,7 @@
 package com.meitheal;
 
 import com.meitheal.model.AdminUser;
+import com.meitheal.model.CommunityUser;
 import com.meitheal.model.Member;
 import com.meitheal.model.MemberStatus;
 import com.meitheal.model.User;
@@ -22,7 +23,7 @@ class UserAccountTest {
     @Test
     void suspensionCapabilityIsAnsweredThroughAUserReference() {
         Member member = service.registerMember("Alice Smith", "alice@example.com");
-        User ordinary = new User("alice", "Alice Smith", member);
+        User ordinary = new CommunityUser("alice", "Alice Smith", member);
         User administrator = new AdminUser("admin", "System Administrator");
 
         assertFalse(ordinary.canSuspendMembers(), "An ordinary member cannot suspend members");
@@ -33,7 +34,7 @@ class UserAccountTest {
     void ordinaryMemberCannotSuspendButAdminCan() {
         Member target = service.registerMember("Target Member", "target@example.com");
         Member actorMember = service.registerMember("Acting Member", "actor@example.com");
-        User ordinary = new User("actor", "Acting Member", actorMember);
+        User ordinary = new CommunityUser("actor", "Acting Member", actorMember);
         User administrator = new AdminUser("admin", "System Administrator");
 
         assertThrows(SecurityException.class,
@@ -55,7 +56,7 @@ class UserAccountTest {
     void inspectionIsScopedToOwnRecordUnlessAdmin() {
         Member own = service.registerMember("Own Member", "own@example.com");
         Member other = service.registerMember("Other Member", "other@example.com");
-        User ordinary = new User("own", "Own Member", own);
+        User ordinary = new CommunityUser("own", "Own Member", own);
         User administrator = new AdminUser("admin", "System Administrator");
 
         assertTrue(ordinary.canInspect(own), "A member may inspect their own record");
@@ -68,7 +69,7 @@ class UserAccountTest {
     @Test
     void onlyOrdinaryUsersHaveALinkedMember() {
         Member member = service.registerMember("Linked Member", "linked@example.com");
-        User ordinary = new User("linked", "Linked Member", member);
+        User ordinary = new CommunityUser("linked", "Linked Member", member);
         AdminUser administrator = new AdminUser("admin", "System Administrator");
 
         assertSame(member, ordinary.linkedMember().orElseThrow(),
@@ -82,11 +83,11 @@ class UserAccountTest {
         Member firstMember = service.registerMember("First", "first@example.com");
         Member secondMember = service.registerMember("Second", "second@example.com");
 
-        User first = new User("shared-login", "First Name", firstMember);
-        User second = new User("shared-login", "Different Name", secondMember);
+        User first = new CommunityUser("shared-login", "First Name", firstMember);
+        User second = new CommunityUser("shared-login", "Different Name", secondMember);
 
         assertEquals(first, second);
         assertEquals(first.hashCode(), second.hashCode());
-        assertNotEquals(first, new User("different-login", "First Name", firstMember));
+        assertNotEquals(first, new CommunityUser("different-login", "First Name", firstMember));
     }
 }
