@@ -10,7 +10,7 @@ package com.meitheal.model;
 public class AdminUser extends User {
 
     public AdminUser(String loginId, String displayName) {
-        super(loginId, displayName, null, false);
+        super(loginId, displayName, null);
     }
 
     @Override
@@ -21,5 +21,13 @@ public class AdminUser extends User {
     @Override
     public boolean canInspect(Member other) {
         return true;
+    }
+
+    /**
+     * An administrator has no time-bank account and may not act as a member.
+     */
+    @Override
+    public boolean canActAsMember() {
+        return false;
     }
 }

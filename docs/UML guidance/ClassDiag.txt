@@ -24,7 +24,7 @@ class AdminUser {
     + issueCommunityGrant(fund: CommunityFund, recipient: Member, amount: Real)
 }
 
-class CommunityMemberAccount {
+class CommunityUser {
 }
 
 class Member {
@@ -58,7 +58,7 @@ class Engagement {
 
 ' Inheritance & Realization
 User <|-- AdminUser
-User <|-- CommunityMemberAccount
+User <|-- CommunityUser
 Session <|-- Offering
 Session <|-- Request
 
@@ -81,7 +81,7 @@ Member "1" -- "*" Engagement : participates in >
 Ledger "1" o-- "*" Engagement : contains >
 
 ' Financial & Governance Entities
-Bank "1" -- "*" CommunityMemberAccount : manages >
+Bank "1" -- "*" CommunityUser : manages >
 AdminUser "1" ..> CommunityFund : takes grant from >
 AdminUser "1" ..> Member : awards grant to >
 CommunityFund "1" ..> Member : disburses grant to >

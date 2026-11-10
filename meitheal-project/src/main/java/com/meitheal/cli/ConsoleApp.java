@@ -97,7 +97,7 @@ public class ConsoleApp {
             }
             if (choice >= 1 && choice <= members.size()) {
                 Member m = members.get(choice - 1);
-                return new User(m.getId(), m.getName(), m);
+                return new CommunityUser(m.getId(), m.getName(), m);
             }
             if (choice == adminChoice) {
                 return new AdminUser("ADMIN", "System Administrator");

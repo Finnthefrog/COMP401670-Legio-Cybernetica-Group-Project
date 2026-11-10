@@ -4,35 +4,25 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The login identity of an ordinary community member.
+ * Abstract login identity for the Meitheal CLI.
  *
- * <p>A login answers "who is acting right now?" and exposes the capabilities that
- * vary between identities, so callers ask the identity object instead of testing
- * its concrete type.</p>
+ * <p>A login answers "who is acting right now?" and declares the capabilities
+ * that vary between identities, so callers ask the identity object instead of
+ * testing its concrete type.</p>
  */
-public class User {
+public abstract class User {
     private final String loginId;
     private final String displayName;
     private final Member member;
 
     /**
-     * Creates an ordinary member login. Such a login always acts as a member.
+     * Base constructor for login identities. Subclasses decide whether a linked
+     * member is required: a community login supplies one, an administrator does not.
      */
-    public User(String loginId, String displayName, Member member) {
-        this(loginId, displayName, member, true);
-    }
-
-    /**
-     * Constructor for subclasses whose login does not act as a member (for example
-     * {@link AdminUser}). {@code requireMember} keeps the ordinary public contract
-     * strict while allowing an administrator login to have no linked member.
-     */
-    protected User(String loginId, String displayName, Member member, boolean requireMember) {
+    protected User(String loginId, String displayName, Member member) {
         this.loginId = Objects.requireNonNull(loginId, "Login ID cannot be null");
         this.displayName = Objects.requireNonNull(displayName, "Display name cannot be null");
-        this.member = requireMember
-                ? Objects.requireNonNull(member, "An ordinary user must act as a member")
-                : member;
+        this.member = member;
     }
 
     public String getLoginId() {
@@ -53,17 +43,17 @@ public class User {
     /**
      * Whether this identity is allowed to suspend or reinstate members.
      */
-    public boolean canSuspendMembers() {
-        return false;
-    }
+    public abstract boolean canSuspendMembers();
 
     /**
      * Whether this identity may inspect the given member's record.
-     * An ordinary member may only inspect their own record (R12).
      */
-    public boolean canInspect(Member other) {
-        return member != null && member.equals(other);
-    }
+    public abstract boolean canInspect(Member other);
+
+    /**
+     * Whether this identity is a time-bank account that may perform member actions.
+     */
+    public abstract boolean canActAsMember();
 
     @Override
     public boolean equals(Object o) {
